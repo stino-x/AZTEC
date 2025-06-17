@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String    @id @default(uuid())
+  role                   Role?
+  email                  String    @unique
+  name                   String
+  resetToken             String?
+  resetTokenExpiry       DateTime?
+  isEmailVerified        Boolean   @default(false)
+  verificationCode       String?
+  verificationCodeExpiry DateTime?
+  password               String
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  picture                String?
+
+  @@map("users")
+}
+
+model Student {
+  id               String            @id @default(uuid())
+  name             String
+  age              Int
+  classId          String            @map("class_id")
+  parentId         String            @map("parent_id")
+  picture          String?
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  address          String
+  admissionDate    DateTime
+  b2FileId         String?
+  b2FileName       String?
+  email            String            @unique
+  phone            String            @unique
+  regNumber        String            @unique
+  attendances      Attendance[]
+  qrCodes          QRCode[]
+  smsNotifications SMSNotification[]
+  class            Class             @relation(fields: [classId], references: [id])
+  parent           Parent            @relation(fields: [parentId], references: [id])
+
+  @@map("students")
+}
+
+model Class {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  attendances Attendance[]
+  students    Student[]
+
+  @@map("classes")
+}
+
+model Parent {
+  id               String            @id @default(uuid())
+  name             String
+  phone            String            @unique
+  email            String            @unique
+  address          String
+  picture          String?
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  smsNotifications SMSNotification[]
+  students         Student[]
+
+  @@map("parents")
+}
+
+model Attendance {
+  id           String    @id @default(uuid())
+  studentId    String    @map("student_id")
+  classId      String    @map("class_id")
+  checkInTime  DateTime  @map("check_in_time")
+  checkOutTime DateTime? @map("check_out_time")
+  year         Int
+  day          Int
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  status       String    @default("present")
+  class        Class     @relation(fields: [classId], references: [id])
+  student      Student   @relation(fields: [studentId], references: [id])
+
+  @@map("attendances")
+}
+
+model QRCode {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  studentId String   @map("student_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  student   Student  @relation(fields: [studentId], references: [id])
+
+  @@map("qr_codes")
+}
+
+model SMSNotification {
+  id        String   @id @default(uuid())
+  studentId String   @map("student_id")
+  parentId  String   @map("parent_id")
+  status    String
+  message   String
+  sentAt    DateTime @default(now()) @map("sent_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  parent    Parent   @relation(fields: [parentId], references: [id])
+  student   Student  @relation(fields: [studentId], references: [id])
+
+  @@map("sms_notifications")
+}
+
+enum Role {
+  ADMIN
+  SECURITY
+  TEACHER
+}
